@@ -1,0 +1,2696 @@
+{
+ "name": "🍻 TREV - bucks party (the full build)",
+ "nodes": [
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "hours",
+       "hoursInterval": 2
+      }
+     ]
+    }
+   },
+   "name": "Every 2 hours",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    -420,
+    208
+   ]
+  },
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "days",
+       "triggerAtHour": 6
+      }
+     ]
+    }
+   },
+   "name": "Every morning, 6am",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    -420,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "updates": [
+     "poll_answer"
+    ],
+    "additionalFields": {}
+   },
+   "name": "Poll votes (Telegram)",
+   "type": "n8n-nodes-base.telegramTrigger",
+   "typeVersion": 1.1,
+   "position": [
+    -420,
+    528
+   ]
+  },
+  {
+   "parameters": {
+    "path": "trev-home",
+    "httpMethod": "POST",
+    "responseMode": "onReceived",
+    "options": {}
+   },
+   "name": "Heading home (iPhone Shortcut)",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    -420,
+    688
+   ]
+  },
+  {
+   "parameters": {
+    "path": "trev-sleep",
+    "httpMethod": "POST",
+    "responseMode": "onReceived",
+    "options": {}
+   },
+   "name": "Sleep score (iPhone Shortcut)",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    -420,
+    848
+   ]
+  },
+  {
+   "parameters": {
+    "path": "trev-jess",
+    "httpMethod": "POST",
+    "responseMode": "responseNode",
+    "options": {}
+   },
+   "name": "Jess texts Trev (Twilio)",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    -420,
+    1008
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "return [{ json: { lane: 'watch' } }];\n"
+   },
+   "name": "Mark: watch",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    -200,
+    208
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "return [{ json: { lane: 'day' } }];\n"
+   },
+   "name": "Mark: day plan",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    -200,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// ============ TREV SETTINGS ============  edit these, nothing else. Setup: SETUP-GUIDE.md\nconst settings = {\n  ME: 'Your name',\n  GROOM: { name: 'Matt', surname: 'Brennan', instagram: 'the_grooms_instagram' },\n  FIANCEE: 'Jess',\n  FIANCEE_NUMBER: '+61400000000',          // only used to recognise her texts to Trev's number\n  TELEGRAM_GROUP_ID: 'YOUR_BUCKS_GROUP_CHAT_ID',   // the bucks group chat, with Trev added\n  TELEGRAM_CHAT_ID: 'YOUR_TELEGRAM_CHAT_ID',       // you: the organiser\n  GROOM_TELEGRAM_ID: 'THE_GROOMS_TELEGRAM_ID',\n  TIMEZONE: 'Australia/Brisbane',\n  TRIP: { where: 'Burleigh Heads', dates: '13-15 March', start: '2027-03-13', nights: 2,\n          fromAirport: 'PER', toAirport: 'OOL' },\n  VILLA: { name: 'Villa 7, Burleigh Heads', lat: -28.0919, lng: 153.4527,\n           searchUrl: 'https://www.airbnb.com.au/s/Burleigh-Heads/homes?adults=16', capAud: 6000 },\n  GUEST_LIST_SIZE: 16,\n  MIN_TAGS: 3,                             // tagged with the groom at least this often to make the list\n  SHIRT: { variantId: 4012, photoUrl: '' },        // Printful variant id; photoUrl = the shirt print\n  SLEEP_FLOOR: 50,\n  CARE_PACKAGE: { store: 'Woolworths Metro', items: ['Hash browns', 'Electrolytes', 'Panadol'],\n                  url: 'https://www.ubereats.com/au', capAud: 40 },\n  KEBABS: { url: 'https://www.ubereats.com/au/search?q=kebab', capAud: 300 },\n  AUTO_REPLY_FIANCEE: false,               // false = Trev drafts it and you send. true = Twilio replies\n  BROWSER_PROFILE_ID: 'YOUR_BROWSER_USE_PROFILE_ID',\n  AGENT_MAX_USD: 1,\n  APIFY_MAX_USD: 0.5,\n  MODEL: 'claude-sonnet-5-5',\n};\nconst inp = $input.first().json;\nconst p = String(inp.webhookUrl || '');\nconst body = (inp.body && Object.keys(inp.body).length) ? inp.body : (inp.query || {});\nconst lane = inp.poll_answer ? 'vote' : p.includes('trev-home') ? 'home' : p.includes('trev-sleep') ? 'sleep'\n  : p.includes('trev-jess') ? 'jess' : (inp.lane || 'watch');\nreturn [{ json: { ...settings, lane, input: inp.poll_answer ? inp : body } }];\n"
+   },
+   "name": "Trev settings",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    40,
+    608
+   ]
+  },
+  {
+   "parameters": {
+    "rules": {
+     "values": [
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "r0",
+          "leftValue": "={{ $json.lane }}",
+          "rightValue": "watch",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "watch"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "r1",
+          "leftValue": "={{ $json.lane }}",
+          "rightValue": "day",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "day"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "r2",
+          "leftValue": "={{ $json.lane }}",
+          "rightValue": "vote",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "vote"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "r3",
+          "leftValue": "={{ $json.lane }}",
+          "rightValue": "home",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "home"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "r4",
+          "leftValue": "={{ $json.lane }}",
+          "rightValue": "sleep",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "sleep"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "r5",
+          "leftValue": "={{ $json.lane }}",
+          "rightValue": "jess",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "jess"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "name": "Which lane?",
+   "type": "n8n-nodes-base.switch",
+   "typeVersion": 3.2,
+   "position": [
+    240,
+    608
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "=https://api.apify.com/v2/acts/apify~instagram-post-scraper/run-sync-get-dataset-items?maxTotalChargeUsd={{ $('Trev settings').first().json.APIFY_MAX_USD }}",
+    "options": {
+     "timeout": 300000
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({ username: [$('Trev settings').first().json.GROOM.instagram], resultsLimit: 3 }) }}",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth"
+   },
+   "name": "Apify: the groom's latest posts",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    480,
+    -260
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "// The groom's newest post. Only new ones go to Claude, so the check costs nothing on a quiet day.\nconst S = $('Trev settings').first().json;\nconst store = $getWorkflowStaticData('global');\nconst posts = $input.all().map(i => i.json).filter(p => p && (p.shortCode || p.id));\nposts.sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));\nconst p = posts[0];\nif (!p || store.lastPost === (p.shortCode || p.id) || store.engaged) return [{ json: { fresh: false } }];\nstore.lastPost = p.shortCode || p.id;\nreturn [{ json: { fresh: true, caption: p.caption || '', image: p.displayUrl || (p.images || [])[0] || '', url: p.url } }];\n"
+   },
+   "name": "New post?",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    656,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.fresh }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Fresh?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    832,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Claude looks at the photo itself, so \"engaged\" never relies on a hashtag.\nconst S = $('Trev settings').first().json;\nconst p = $input.first().json;\nconst ask = `This is a new Instagram post from ${S.GROOM.name}. Caption: \"${p.caption}\".\nIs this an engagement announcement? Look for a ring on a hand, a proposal, or the caption saying so.\nReply with JSON only: {\"engaged\": true or false, \"ring\": true or false, \"why\": \"under 12 words\"}`;\nreturn [{ json: { body: { model: S.MODEL, max_tokens: 1500, messages: [{ role: 'user', content: [\n  { type: 'image', source: { type: 'url', url: p.image } },\n  { type: 'text', text: ask } ] }] } } }];\n"
+   },
+   "name": "Write the ring check",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1008,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.anthropic.com/v1/messages",
+    "options": {
+     "timeout": 90000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "anthropic-version",
+       "value": "2023-06-01"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.body) }}",
+    "authentication": "predefinedCredentialType",
+    "nodeCredentialType": "anthropicApi"
+   },
+   "name": "Claude: is that a ring?",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1184,
+    -260
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "const textOf = (node) => {\n  const t = ($(node).first().json.content || []).map(c => c.text || '').join('').trim();\n  if (!t) throw new Error(node + ' returned no text. Raise max_tokens or check the model name.');\n  return t;\n};\nconst jsonOf = (node) => {\n  const t = textOf(node);\n  const m = t.match(/\\{[\\s\\S]*\\}/);\n  if (!m) throw new Error(node + ' did not return JSON: ' + t.slice(0, 120));\n  return JSON.parse(m[0]);\n};\n\nconst v = jsonOf('Claude: is that a ring?');\nreturn [{ json: { engaged: v.engaged === true, ring: v.ring === true, why: String(v.why || '') } }];\n"
+   },
+   "name": "Read the ring check",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1360,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.engaged }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Engaged?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    1536,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "$getWorkflowStaticData('global').engaged = true;\nreturn $input.all();\n"
+   },
+   "name": "Stop watching",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1712,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "=https://api.apify.com/v2/acts/apify~instagram-tagged-scraper/run-sync-get-dataset-items?maxTotalChargeUsd={{ $('Trev settings').first().json.APIFY_MAX_USD }}",
+    "options": {
+     "timeout": 300000
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({ username: [$('Trev settings').first().json.GROOM.instagram], resultsLimit: 500 }) }}",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth"
+   },
+   "name": "Apify: 10 years of tagged photos",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1888,
+    -260
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "// Apify's tagged posts -> the same shape the demo uses: { year, tagged: [handles] }.\nconst S = $('Trev settings').first().json;\nconst photos = $input.all().map(i => i.json).filter(p => p && p.timestamp).map(p => ({\n  year: new Date(p.timestamp).getFullYear(),\n  tagged: [S.GROOM.instagram, (p.ownerUsername || ''), ...((p.taggedUsers || []).map(u => u.username || u))]\n    .filter((h, i, a) => h && a.indexOf(h) === i) }));\nconst people = {};\nfor (const p of $input.all().map(i => i.json)) {\n  if (p.ownerUsername) people[p.ownerUsername] = { name: p.ownerFullName || p.ownerUsername };\n  for (const u of p.taggedUsers || []) if (u.username) people[u.username] = { name: u.full_name || u.username };\n}\nreturn [{ json: { photos, people } }];\n"
+   },
+   "name": "Tidy the photos",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2064,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nconst { photos, people } = $input.first().json;\nconst counts = {};\nfor (const ph of photos) for (const t of ph.tagged) if (t !== S.GROOM.instagram) counts[t] = (counts[t] || 0) + 1;\nconst all = Object.entries(counts).map(([handle, n]) => ({ handle, n, name: (people[handle] || {}).name || handle,\n  family: ((people[handle] || {}).name || '').toLowerCase().endsWith(' ' + S.GROOM.surname.toLowerCase()) }));\nconst family = all.filter(p => p.family);\nconst mates = all.filter(p => !p.family && p.n >= S.MIN_TAGS).sort((a, b) => b.n - a.n)\n  .slice(0, Math.max(0, S.GUEST_LIST_SIZE - 1 - family.length));\nconst guests = [...mates, ...family];\n$getWorkflowStaticData('global').guests = guests;\nconst msg = `💍 <b>${S.GROOM.name} just got engaged.</b>\\n🔎 ${photos.length} tagged photos scanned.\\n\\n🧾 <b>Guest list (${guests.length + 1})</b>\\n`\n  + guests.map(g => `• ${g.name} · instagram.com/${g.handle}${g.family ? ' (family)' : ''}`).join('\\n')\n  + `\\n\\nInstagram doesn't let bots message people, so add them to the bucks group yourself. Trev takes it from there.`;\nreturn [{ json: { guests, msg } }];\n"
+   },
+   "name": "Build the guest list",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2240,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_CHAT_ID }}",
+    "text": "={{ $('Build the guest list').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text me: the guest list",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    2416,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://api.open-meteo.com/v1/forecast?latitude={{ $('Trev settings').first().json.VILLA.lat }}&longitude={{ $('Trev settings').first().json.VILLA.lng }}&daily=temperature_2m_max,precipitation_probability_max,wind_speed_10m_max&timezone={{ encodeURIComponent($('Trev settings').first().json.TIMEZONE) }}&forecast_days=3",
+    "options": {
+     "timeout": 30000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "User-Agent",
+       "value": "trev-bucks-party-n8n/1.0"
+      }
+     ]
+    }
+   },
+   "name": "Weather at the villa",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    2592,
+    -260
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://marine-api.open-meteo.com/v1/marine?latitude={{ $('Trev settings').first().json.VILLA.lat }}&longitude={{ $('Trev settings').first().json.VILLA.lng }}&daily=wave_height_max&timezone={{ encodeURIComponent($('Trev settings').first().json.TIMEZONE) }}&forecast_days=3",
+    "options": {
+     "timeout": 30000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "User-Agent",
+       "value": "trev-bucks-party-n8n/1.0"
+      }
+     ]
+    }
+   },
+   "name": "Surf at the villa",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    2768,
+    -260
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "// Real forecast for the villa (Open-Meteo, free, no key), so the plan fits the surf and the weather.\nconst S = $('Trev settings').first().json;\nconst w = $('Weather at the villa').first().json.daily || {};\nconst m = ($('Surf at the villa').first().json.daily) || {};\nconst days = (w.time || []).slice(0, 3).map((d, i) => ({ day: i + 1,\n  maxC: Math.round((w.temperature_2m_max || [])[i]), rainPct: (w.precipitation_probability_max || [])[i],\n  windKmh: Math.round((w.wind_speed_10m_max || [])[i]), waveM: (m.wave_height_max || [])[i] }));\nconst ask = `You're Trev, the AI planning ${S.GROOM.name}'s bucks: ${S.GUEST_LIST_SIZE} blokes, ${S.TRIP.where}, ${S.TRIP.dates}, staying at ${S.VILLA.name}.\nThe forecast for the three days: ${JSON.stringify(days)}.\nWrite the itinerary as exactly 3 lines, one per day, like \"Day 1 · Surf 🏄 3ft and clean, then beers 🍻\".\nIt MUST have a surf session, 18 holes of golf, and beers every day. Rain doesn't cancel anything, these blokes play in the wet.\nPut the surf on the day with the biggest waves. Mention the real wave size once. Under 12 words a line. No other text.`;\nreturn [{ json: { days, body: { model: S.MODEL, max_tokens: 1500, messages: [{ role: 'user', content: ask }] } } }];\n"
+   },
+   "name": "Write the itinerary prompt",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2944,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.anthropic.com/v1/messages",
+    "options": {
+     "timeout": 90000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "anthropic-version",
+       "value": "2023-06-01"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.body) }}",
+    "authentication": "predefinedCredentialType",
+    "nodeCredentialType": "anthropicApi"
+   },
+   "name": "Claude: the itinerary",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    3120,
+    -260
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "const textOf = (node) => {\n  const t = ($(node).first().json.content || []).map(c => c.text || '').join('').trim();\n  if (!t) throw new Error(node + ' returned no text. Raise max_tokens or check the model name.');\n  return t;\n};\nconst jsonOf = (node) => {\n  const t = textOf(node);\n  const m = t.match(/\\{[\\s\\S]*\\}/);\n  if (!m) throw new Error(node + ' did not return JSON: ' + t.slice(0, 120));\n  return JSON.parse(m[0]);\n};\n\nconst S = $('Trev settings').first().json;\nconst plan = textOf('Claude: the itinerary');\nreturn [{ json: { plan, msg: `🗓️ <b>${S.GROOM.name}'s bucks · ${S.TRIP.where} · ${S.TRIP.dates}</b>\\n\\n${plan}\\n\\nOne vote each. Lock in or miss out.` } }];\n"
+   },
+   "name": "Write the itinerary",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    3296,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_GROUP_ID }}",
+    "text": "={{ $('Write the itinerary').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Group: the itinerary",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    3472,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "=https://api.telegram.org/bot{{ $('Trev settings').first().json.TELEGRAM_BOT_TOKEN }}/sendPoll",
+    "options": {
+     "timeout": 30000
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({ chat_id: $('Trev settings').first().json.TELEGRAM_GROUP_ID, question: $('Trev settings').first().json.GROOM.name + \"'s bucks · \" + $('Trev settings').first().json.TRIP.where + ' · ' + $('Trev settings').first().json.TRIP.dates + '. You in?', options: ['🔒 Lock me in', 'Miss out 🥲'], is_anonymous: false }) }}"
+   },
+   "name": "Group: Lock in or miss out",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    3648,
+    -260
+   ]
+  },
+  {
+   "parameters": {
+    "content": "## 👀 1. The engagement\nEvery 2 hours Apify checks the groom's newest post. Claude looks at the photo. A ring = 10 years of tagged photos, the guest list (family always in), Claude's itinerary off the real forecast, and the Lock in / Miss out poll in the bucks group.",
+    "width": 3348,
+    "height": 420,
+    "color": 7
+   },
+   "name": "note-29",
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1,
+   "position": [
+    440,
+    -448
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// One Overpass query (OpenStreetMap, free, no key): pubs and bars near the villa, plus golf courses.\nconst S = $('Trev settings').first().json;\nconst v = S.VILLA;\nconst q = `[out:json][timeout:25];(node[\"amenity\"~\"^(pub|bar|biergarten)$\"](around:2500,${v.lat},${v.lng});`\n  + `way[\"leisure\"=\"golf_course\"](around:15000,${v.lat},${v.lng});node[\"cuisine\"~\"kebab\"](around:4000,${v.lat},${v.lng}););out center 80;`;\nreturn [{ json: { q } }];\n"
+   },
+   "name": "Golf, pubs + kebabs query",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    480,
+    240
+   ]
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://overpass-api.de/api/interpreter?data={{ encodeURIComponent($json.q) }}",
+    "options": {
+     "timeout": 60000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "User-Agent",
+       "value": "trev-bucks-party-n8n/1.0"
+      }
+     ]
+    }
+   },
+   "name": "Find them (OpenStreetMap)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    656,
+    240
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "const km = (a, b, c, d) => { const R = 6371, r = Math.PI / 180;\n  const x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2;\n  return 2 * R * Math.asin(Math.sqrt(x)); };\n\n// Tee off at the closest course, then a pub crawl that never walks back on itself.\nconst S = $('Trev settings').first().json;\nconst v = S.VILLA;\nconst els = ($input.first().json.elements || []).map(e => ({ name: (e.tags || {}).name, tags: e.tags || {},\n  lat: e.lat || (e.center || {}).lat, lng: e.lon || (e.center || {}).lon })).filter(e => e.name && e.lat);\nconst golf = els.filter(e => e.tags.leisure === 'golf_course').map(e => ({ ...e, km: km(v.lat, v.lng, e.lat, e.lng) }))\n  .sort((a, b) => a.km - b.km)[0];\nlet pubs = els.filter(e => /pub|bar|biergarten/.test(e.tags.amenity || ''));\nconst route = [];\nlet here = { lat: v.lat, lng: v.lng }, walk = 0;\nwhile (route.length < 4 && pubs.length) {\n  pubs.sort((a, b) => km(here.lat, here.lng, a.lat, a.lng) - km(here.lat, here.lng, b.lat, b.lng));\n  const next = pubs.shift();\n  walk += km(here.lat, here.lng, next.lat, next.lng);\n  route.push(next.name); here = next;\n}\nconst kebab = els.filter(e => /kebab/i.test(e.tags.cuisine || '')).map(e => ({ name: e.name, lat: e.lat, lng: e.lng,\n  km: km(v.lat, v.lng, e.lat, e.lng) })).sort((a, b) => a.km - b.km)[0] || null;\nconst msg = `🛬 <b>Wheels down. Trev's itinerary is live.</b>\\n\\n`\n  + `⛳ 7:40am · 18 holes at ${golf ? golf.name : 'the closest course'}${golf ? ` (${golf.km.toFixed(1)} km)` : ''}\\n`\n  + `🍻 Then the crawl: ${route.join(' → ') || 'the closest pub'}\\n`\n  + `🚶 ${walk.toFixed(1)} km all up. Golf beers stay cold.`;\nreturn [{ json: { golf, route, walk, kebab, msg } }];\n"
+   },
+   "name": "Plan the crawl",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    832,
+    240
+   ]
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://api.open-meteo.com/v1/forecast?latitude={{ $('Trev settings').first().json.VILLA.lat }}&longitude={{ $('Trev settings').first().json.VILLA.lng }}&daily=temperature_2m_max,precipitation_probability_max,wind_speed_10m_max&timezone={{ encodeURIComponent($('Trev settings').first().json.TIMEZONE) }}&forecast_days=1",
+    "options": {
+     "timeout": 30000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "User-Agent",
+       "value": "trev-bucks-party-n8n/1.0"
+      }
+     ]
+    }
+   },
+   "name": "Weather today",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1008,
+    240
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://marine-api.open-meteo.com/v1/marine?latitude={{ $('Trev settings').first().json.VILLA.lat }}&longitude={{ $('Trev settings').first().json.VILLA.lng }}&daily=wave_height_max&timezone={{ encodeURIComponent($('Trev settings').first().json.TIMEZONE) }}&forecast_days=1",
+    "options": {
+     "timeout": 30000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "User-Agent",
+       "value": "trev-bucks-party-n8n/1.0"
+      }
+     ]
+    }
+   },
+   "name": "Surf today",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1184,
+    240
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nconst today = DateTime.now().setZone(S.TIMEZONE).toISODate();\nconst start = S.TRIP.start, end = DateTime.fromISO(start).plus({ days: S.TRIP.nights }).toISODate();\nconst crawl = $('Plan the crawl').first().json;\nconst w = $('Weather today').first().json.daily || {};\nconst ask = `You're Trev, running ${S.GROOM.name}'s bucks in ${S.TRIP.where}. Today: ${Math.round((w.temperature_2m_max || [])[0])}C max,\n${(w.precipitation_probability_max || [])[0]}% rain, waves ${(($('Surf today').first().json.daily || {}).wave_height_max || [])[0]}m.\nGolf: ${crawl.golf ? crawl.golf.name : 'closest course'}. Pub crawl: ${crawl.route.join(' -> ')}.\nWrite today's plan for the group chat in 3 short lines with times. Always 18 holes in the morning, then the crawl. Plain text only: no markdown, no asterisks, no other text.`;\nreturn [{ json: { onTrip: today >= start && today <= end, body: { model: S.MODEL, max_tokens: 1500,\n  messages: [{ role: 'user', content: ask }] } } }];\n"
+   },
+   "name": "Day plan prompt",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1360,
+    240
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.onTrip }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "On the trip today?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    1536,
+    240
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.anthropic.com/v1/messages",
+    "options": {
+     "timeout": 90000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "anthropic-version",
+       "value": "2023-06-01"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.body) }}",
+    "authentication": "predefinedCredentialType",
+    "nodeCredentialType": "anthropicApi"
+   },
+   "name": "Claude: the day plan",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1712,
+    240
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "const textOf = (node) => {\n  const t = ($(node).first().json.content || []).map(c => c.text || '').join('').trim();\n  if (!t) throw new Error(node + ' returned no text. Raise max_tokens or check the model name.');\n  return t;\n};\nconst jsonOf = (node) => {\n  const t = textOf(node);\n  const m = t.match(/\\{[\\s\\S]*\\}/);\n  if (!m) throw new Error(node + ' did not return JSON: ' + t.slice(0, 120));\n  return JSON.parse(m[0]);\n};\n\nreturn [{ json: { msg: '🗓️ <b>Today</b>\\n' + textOf('Claude: the day plan') } }];\n"
+   },
+   "name": "Today's plan",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1888,
+    240
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_GROUP_ID }}",
+    "text": "={{ $('Today's plan').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Group: today's plan",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    2064,
+    240
+   ]
+  },
+  {
+   "parameters": {
+    "content": "## ⛳ 2. The trip\n6am on every day of the trip: the closest golf course, a pub crawl that never doubles back, and the forecast. Claude writes the day. Off-trip mornings stop at the check.",
+    "width": 1764,
+    "height": 420,
+    "color": 4
+   },
+   "name": "note-40",
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1,
+   "position": [
+    440,
+    52
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// One vote each. Lock in (option 0) books that person, once, even if they tap twice.\nconst S = $('Trev settings').first().json;\nconst a = S.input.poll_answer;\nconst store = $getWorkflowStaticData('global');\nstore.votes = store.votes || {};\nconst id = String(a.user.id);\nconst isYes = (a.option_ids || [])[0] === 0;\nconst first = isYes && !store.votes[id];\nif (isYes) store.votes[id] = { name: [a.user.first_name, a.user.last_name].filter(Boolean).join(' '), at: Date.now() };\nconst count = Object.keys(store.votes).length;\nconst villaNow = isYes && count >= Math.ceil(S.GUEST_LIST_SIZE / 2) && !store.villaBooked;\nif (villaNow) store.villaBooked = true;\nreturn [{ json: { book: first, name: (store.votes[id] || {}).name || a.user.first_name, count, villaNow } }];\n"
+   },
+   "name": "Count the vote",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    480,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.book }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "New lock in?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    656,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nconst back = DateTime.fromISO(S.TRIP.start).plus({ days: S.TRIP.nights }).toISODate();\nreturn [{ json: { body: { data: { cabin_class: 'economy', passengers: [{ type: 'adult' }], slices: [\n  { origin: S.TRIP.fromAirport, destination: S.TRIP.toAirport, departure_date: S.TRIP.start },\n  { origin: S.TRIP.toAirport, destination: S.TRIP.fromAirport, departure_date: back } ] } } } }];\n"
+   },
+   "name": "Flight search",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    832,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.duffel.com/air/offer_requests?return_offers=true&supplier_timeout=20000",
+    "options": {
+     "timeout": 60000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "Duffel-Version",
+       "value": "v2"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.body) }}",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth"
+   },
+   "name": "Duffel: cheapest flight",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1008,
+    740
+   ],
+   "onError": "continueRegularOutput"
+  },
+  {
+   "parameters": {
+    "jsCode": "// Duffel finds the cheapest fare. Trev doesn't spend anyone's money without them saying so.\nconst S = $('Trev settings').first().json;\nconst v = $('Count the vote').first().json;\nconst offers = ((($input.first().json || {}).data || {}).offers || []).sort((a, b) => +a.total_amount - +b.total_amount);\nconst o = offers[0];\nconst fare = o ? `${o.total_currency} ${Math.round(+o.total_amount)} return with ${o.owner.name}` : 'no fares found yet, Trev will retry';\nreturn [{ json: { msg: `✅ <b>${v.name} is locked in</b> (${v.count}/${S.GUEST_LIST_SIZE}).\\n✈️ Cheapest flight: ${fare}\\n👕 ${S.GROOM.name}'s shirt is in the print queue.` } }];\n"
+   },
+   "name": "Write the lock in",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1184,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// A Printful DRAFT order (confirm: false). Nothing is charged until you confirm it in Printful.\nconst S = $('Trev settings').first().json;\nconst v = $('Count the vote').first().json;\nreturn [{ json: { body: { confirm: false, external_id: 'trev-' + Date.now(),\n  recipient: { name: v.name, address1: S.VILLA.name, city: S.TRIP.where, country_code: 'AU' },\n  items: [{ variant_id: S.SHIRT.variantId, quantity: 1, files: S.SHIRT.photoUrl ? [{ url: S.SHIRT.photoUrl }] : [] }] } } }];\n"
+   },
+   "name": "Shirt order",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1360,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.printful.com/orders",
+    "options": {
+     "timeout": 30000
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.body) }}",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth"
+   },
+   "name": "Printful: draft shirt",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1536,
+    740
+   ],
+   "onError": "continueRegularOutput"
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_GROUP_ID }}",
+    "text": "={{ $('Write the lock in').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Group: locked in",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    1712,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $('Count the vote').first().json.villaNow }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Half the group in?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    1888,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nconst task = `Open ${S.VILLA.searchUrl}. Find a whole house that sleeps ${S.GUEST_LIST_SIZE} for ${S.TRIP.dates} (${S.TRIP.nights} nights).\nPick the best-reviewed one under AUD ${S.VILLA.capAud} total. Do NOT pay. Stop at the final confirm screen and return\nJSON {\"name\": \"...\", \"url\": \"...\", \"totalAud\": number}. Stop at any login, code or security check.`;\nreturn [{ json: { run: { task, profile_id: S.BROWSER_PROFILE_ID, max_cost_usd: S.AGENT_MAX_USD } } }];\n"
+   },
+   "name": "Brief: villa",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2064,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.browser-use.com/api/v4/runs",
+    "options": {
+     "timeout": 30000
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.run) }}",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth"
+   },
+   "name": "Agent: start (villa)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    2240,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "resume": "timeInterval",
+    "amount": 30,
+    "unit": "seconds"
+   },
+   "name": "Wait 30s (villa)",
+   "type": "n8n-nodes-base.wait",
+   "typeVersion": 1.1,
+   "position": [
+    2416,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://api.browser-use.com/api/v4/runs/{{ $('Agent: start (villa)').first().json.id }}",
+    "options": {
+     "timeout": 30000
+    },
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth"
+   },
+   "name": "Agent: status (villa)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    2592,
+    740
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ ['completed','failed','cancelled'].includes($json.status) }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Agent done? (villa)",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    2768,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nlet out = $input.first().json.output;\ntry { out = typeof out === 'string' ? JSON.parse(out.match(/\\{[\\s\\S]*\\}/)[0]) : out; } catch (e) { out = null; }\nconst msg = out && out.url\n  ? `🏡 <b>Villa held:</b> ${out.name}, AUD ${out.totalAud}.\\nTap to confirm: ${out.url}`\n  : `🏡 Couldn't hold a villa automatically. Here's the search: ${S.VILLA.searchUrl}`;\nreturn [{ json: { msg } }];\n"
+   },
+   "name": "Villa result",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2944,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_CHAT_ID }}",
+    "text": "={{ $('Villa result').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text me: the villa",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    3120,
+    740
+   ]
+  },
+  {
+   "parameters": {
+    "content": "## 🔒 3. Lock in or miss out\nEvery Lock in: the cheapest return flight on Duffel and a Printful draft shirt (nothing charged until you confirm). Once half the group is in, a browser agent finds the villa and stops before paying, so you tap to confirm.",
+    "width": 2820,
+    "height": 420,
+    "color": 3
+   },
+   "name": "note-57",
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1,
+   "position": [
+    440,
+    552
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const km = (a, b, c, d) => { const R = 6371, r = Math.PI / 180;\n  const x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2;\n  return 2 * R * Math.asin(Math.sqrt(x)); };\n\n// The iPhone Shortcut posts { lat, lng } every 10 minutes after 9pm. Find My has no API,\n// so this is the honest version: your own phone's location, sent by you.\nconst S = $('Trev settings').first().json;\nconst v = S.VILLA;\nconst here = { lat: +S.input.lat, lng: +S.input.lng, at: Date.now() };\nconst store = $getWorkflowStaticData('global');\nconst night = DateTime.now().setZone(S.TIMEZONE).minus({ hours: 12 }).toISODate();\nconst prev = store.lastPing;\nstore.lastPing = here;\nconst d = km(here.lat, here.lng, v.lat, v.lng);\nconst was = prev ? km(prev.lat, prev.lng, v.lat, v.lng) : null;\nconst hour = DateTime.now().setZone(S.TIMEZONE).hour;\nconst late = hour >= 21 || hour < 4;\nconst go = late && was !== null && d < was - 0.15 && d < 6 && d > 0.3 && store.kebabNight !== night;\nif (go) store.kebabNight = night;\nreturn [{ json: { go, kmToVilla: +d.toFixed(2), from: here } }];\n"
+   },
+   "name": "Closer to the villa?",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    480,
+    1240
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.go }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Order now?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    656,
+    1240
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nconst task = `Open ${S.KEBABS.url}. Order ${S.GUEST_LIST_SIZE} kebabs from the closest well-rated kebab shop that can deliver to\n\"${S.VILLA.name}\", ASAP. Use the saved address and card. Total must be under AUD ${S.KEBABS.capAud}, otherwise stop.\nReturn JSON {\"ordered\": true/false, \"shop\": \"...\", \"eta\": \"...\", \"total\": number}. Stop at any login, code or security check.`;\nreturn [{ json: { run: { task, profile_id: S.BROWSER_PROFILE_ID, max_cost_usd: S.AGENT_MAX_USD } } }];\n"
+   },
+   "name": "Brief: kebabs",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    832,
+    1240
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.browser-use.com/api/v4/runs",
+    "options": {
+     "timeout": 30000
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.run) }}",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth"
+   },
+   "name": "Agent: start (kebabs)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1008,
+    1240
+   ]
+  },
+  {
+   "parameters": {
+    "resume": "timeInterval",
+    "amount": 30,
+    "unit": "seconds"
+   },
+   "name": "Wait 30s (kebabs)",
+   "type": "n8n-nodes-base.wait",
+   "typeVersion": 1.1,
+   "position": [
+    1184,
+    1240
+   ]
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://api.browser-use.com/api/v4/runs/{{ $('Agent: start (kebabs)').first().json.id }}",
+    "options": {
+     "timeout": 30000
+    },
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth"
+   },
+   "name": "Agent: status (kebabs)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1360,
+    1240
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ ['completed','failed','cancelled'].includes($json.status) }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Agent done? (kebabs)",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    1536,
+    1240
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nlet out = $input.first().json.output;\ntry { out = typeof out === 'string' ? JSON.parse(out.match(/\\{[\\s\\S]*\\}/)[0]) : out; } catch (e) { out = null; }\nconst ok = out && out.ordered;\nconst what = 'kebabs';\nconst link = what === 'kebabs' ? S.KEBABS.url : S.CARE_PACKAGE.url;\nconst msg = ok ? (what === 'kebabs'\n    ? `🥙 <b>${S.GUEST_LIST_SIZE} kebabs ordered</b> from ${out.shop}. Landing at the villa ${out.eta}.`\n    : `🛵 <b>Care package on the way</b>: ${S.CARE_PACKAGE.items.join(', ')}. ETA ${out.eta}.`)\n  : `Trev couldn't finish the ${what} order. Tap to do it: ${link}`;\nreturn [{ json: { msg } }];\n"
+   },
+   "name": "Kebab result",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1712,
+    1240
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_GROUP_ID }}",
+    "text": "={{ $('Kebab result').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Group: kebabs",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    1888,
+    1240
+   ]
+  },
+  {
+   "parameters": {
+    "content": "## 🥙 4. Heading home\nFind My has no API, so each phone's Shortcut sends its location after 9pm. Closer every ping = heading home = one kebab order a night, capped.",
+    "width": 1588,
+    "height": 420,
+    "color": 5
+   },
+   "name": "note-67",
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1,
+   "position": [
+    440,
+    1052
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// The groom's iPhone Shortcut sends { score } when he wakes (Apple Watch sleep score, Garmin,\n// Oura or Whoop all work). One care package a morning, max.\nconst S = $('Trev settings').first().json;\nconst score = +S.input.score;\nconst store = $getWorkflowStaticData('global');\nconst day = DateTime.now().setZone(S.TIMEZONE).toISODate();\nconst go = Number.isFinite(score) && score < S.SLEEP_FLOOR && store.careDay !== day;\nif (go) store.careDay = day;\nreturn [{ json: { go, score } }];\n"
+   },
+   "name": "Score under 50?",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    480,
+    1740
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.go }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Send it?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    656,
+    1740
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nconst c = S.CARE_PACKAGE;\nconst task = `Open ${c.url}. From ${c.store}, order: ${c.items.join(', ')}. Deliver to \"${S.VILLA.name}\", ASAP, leave at door.\nUse the saved address and card. Total under AUD ${c.capAud}, otherwise stop.\nReturn JSON {\"ordered\": true/false, \"eta\": \"...\", \"total\": number}. Stop at any login, code or security check.`;\nreturn [{ json: { run: { task, profile_id: S.BROWSER_PROFILE_ID, max_cost_usd: S.AGENT_MAX_USD } } }];\n"
+   },
+   "name": "Brief: care package",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    832,
+    1740
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.browser-use.com/api/v4/runs",
+    "options": {
+     "timeout": 30000
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.run) }}",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth"
+   },
+   "name": "Agent: start (care)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1008,
+    1740
+   ]
+  },
+  {
+   "parameters": {
+    "resume": "timeInterval",
+    "amount": 30,
+    "unit": "seconds"
+   },
+   "name": "Wait 30s (care)",
+   "type": "n8n-nodes-base.wait",
+   "typeVersion": 1.1,
+   "position": [
+    1184,
+    1740
+   ]
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://api.browser-use.com/api/v4/runs/{{ $('Agent: start (care)').first().json.id }}",
+    "options": {
+     "timeout": 30000
+    },
+    "authentication": "genericCredentialType",
+    "genericAuthType": "httpHeaderAuth"
+   },
+   "name": "Agent: status (care)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1360,
+    1740
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ ['completed','failed','cancelled'].includes($json.status) }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Agent done? (care)",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    1536,
+    1740
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nlet out = $input.first().json.output;\ntry { out = typeof out === 'string' ? JSON.parse(out.match(/\\{[\\s\\S]*\\}/)[0]) : out; } catch (e) { out = null; }\nconst ok = out && out.ordered;\nconst what = 'care package';\nconst link = what === 'kebabs' ? S.KEBABS.url : S.CARE_PACKAGE.url;\nconst msg = ok ? (what === 'kebabs'\n    ? `🥙 <b>${S.GUEST_LIST_SIZE} kebabs ordered</b> from ${out.shop}. Landing at the villa ${out.eta}.`\n    : `🛵 <b>Care package on the way</b>: ${S.CARE_PACKAGE.items.join(', ')}. ETA ${out.eta}.`)\n  : `Trev couldn't finish the ${what} order. Tap to do it: ${link}`;\nreturn [{ json: { msg } }];\n"
+   },
+   "name": "Care result",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1712,
+    1740
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.GROOM_TELEGRAM_ID }}",
+    "text": "={{ $('Care result').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text the groom: care package",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    1888,
+    1740
+   ]
+  },
+  {
+   "parameters": {
+    "content": "## ⌚ 5. The rule\nThe groom's Shortcut sends his sleep score when he wakes. Under 50: hash browns, electrolytes and Panadol from his own Uber Eats. Once a morning, capped.",
+    "width": 1588,
+    "height": 420,
+    "color": 6
+   },
+   "name": "note-77",
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1,
+   "position": [
+    440,
+    1552
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nconst from = String(S.input.From || '');\nconst text = String(S.input.Body || '').slice(0, 400);\nconst ask = `You're Trev, an AI looking after ${S.GROOM.name} on his bucks. His fiancee ${S.FIANCEE} texted: \"${text}\".\nIf she sounds worried about safety or an emergency, reply exactly: \"Getting him to call you now.\"\nOtherwise reply as his minder, calm and completely reassuring, in exactly this shape:\n\"He's safe. [a small number] beers. In bed by [an early time].\" For example: \"He's safe. Two beers. In bed by ten.\"\nNumbers as words. No emojis. No em dashes. Output only the message.`;\nreturn [{ json: { fromHer: from.replace(/\\D/g, '').endsWith(S.FIANCEE_NUMBER.replace(/\\D/g, '').slice(-9)), text,\n  body: { model: S.MODEL, max_tokens: 1500, messages: [{ role: 'user', content: ask }] } } }];\n"
+   },
+   "name": "Is it Jess?",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    480,
+    2240
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.fromHer }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "From Jess?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    656,
+    2240
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.anthropic.com/v1/messages",
+    "options": {
+     "timeout": 90000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "anthropic-version",
+       "value": "2023-06-01"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.body) }}",
+    "authentication": "predefinedCredentialType",
+    "nodeCredentialType": "anthropicApi"
+   },
+   "name": "Claude: reply to Jess",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    832,
+    2240
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "const textOf = (node) => {\n  const t = ($(node).first().json.content || []).map(c => c.text || '').join('').trim();\n  if (!t) throw new Error(node + ' returned no text. Raise max_tokens or check the model name.');\n  return t;\n};\nconst jsonOf = (node) => {\n  const t = textOf(node);\n  const m = t.match(/\\{[\\s\\S]*\\}/);\n  if (!m) throw new Error(node + ' did not return JSON: ' + t.slice(0, 120));\n  return JSON.parse(m[0]);\n};\n\nconst S = $('Trev settings').first().json;\nconst reply = textOf('Claude: reply to Jess');\nconst urgent = /call you now/i.test(reply);\nconst esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');\nconst send = S.AUTO_REPLY_FIANCEE && !urgent;\nreturn [{ json: { reply, urgent, send,\n  twiml: send ? `<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response><Message>${esc(reply)}</Message></Response>`\n              : '<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response></Response>',\n  msg: `📩 <b>${S.FIANCEE}:</b> “${$('Is it Jess?').first().json.text}”\\n📲 <b>Trev ${send ? 'replied' : 'suggests'}:</b> ${reply}`\n    + (urgent ? `\\n\\n🚨 She sounds worried. Call her, ${S.GROOM.name}.` : '') } }];\n"
+   },
+   "name": "Reply to Jess",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1008,
+    2240
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.GROOM_TELEGRAM_ID }}",
+    "text": "={{ $('Reply to Jess').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text the groom: Jess",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    1184,
+    2240
+   ]
+  },
+  {
+   "parameters": {
+    "respondWith": "text",
+    "responseBody": "={{ $('Reply to Jess').first().json.twiml }}",
+    "options": {
+     "responseHeaders": {
+      "entries": [
+       {
+        "name": "Content-Type",
+        "value": "text/xml"
+       }
+      ]
+     }
+    }
+   },
+   "name": "Answer Twilio",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [
+    1360,
+    2240
+   ]
+  },
+  {
+   "parameters": {
+    "respondWith": "text",
+    "responseBody": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response></Response>",
+    "options": {
+     "responseHeaders": {
+      "entries": [
+       {
+        "name": "Content-Type",
+        "value": "text/xml"
+       }
+      ]
+     }
+    }
+   },
+   "name": "Answer Twilio (not her)",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [
+    656,
+    2472
+   ]
+  },
+  {
+   "parameters": {
+    "content": "## 📩 6. The fiancee\nShe texts Trev's Twilio number. Claude writes a calm reply. Off by default: Trev drafts it and the groom decides. Anything that sounds like a real worry goes straight to the groom.",
+    "width": 1060,
+    "height": 420,
+    "color": 2
+   },
+   "name": "note-85",
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1,
+   "position": [
+    440,
+    2052
+   ]
+  }
+ ],
+ "connections": {
+  "Every 2 hours": {
+   "main": [
+    [
+     {
+      "node": "Mark: watch",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Every morning, 6am": {
+   "main": [
+    [
+     {
+      "node": "Mark: day plan",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Mark: watch": {
+   "main": [
+    [
+     {
+      "node": "Trev settings",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Mark: day plan": {
+   "main": [
+    [
+     {
+      "node": "Trev settings",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Poll votes (Telegram)": {
+   "main": [
+    [
+     {
+      "node": "Trev settings",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Heading home (iPhone Shortcut)": {
+   "main": [
+    [
+     {
+      "node": "Trev settings",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Sleep score (iPhone Shortcut)": {
+   "main": [
+    [
+     {
+      "node": "Trev settings",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Jess texts Trev (Twilio)": {
+   "main": [
+    [
+     {
+      "node": "Trev settings",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Trev settings": {
+   "main": [
+    [
+     {
+      "node": "Which lane?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Which lane?": {
+   "main": [
+    [
+     {
+      "node": "Apify: the groom's latest posts",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Golf, pubs + kebabs query",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Count the vote",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Closer to the villa?",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Score under 50?",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Is it Jess?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Apify: the groom's latest posts": {
+   "main": [
+    [
+     {
+      "node": "New post?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "New post?": {
+   "main": [
+    [
+     {
+      "node": "Fresh?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Fresh?": {
+   "main": [
+    [
+     {
+      "node": "Write the ring check",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write the ring check": {
+   "main": [
+    [
+     {
+      "node": "Claude: is that a ring?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Claude: is that a ring?": {
+   "main": [
+    [
+     {
+      "node": "Read the ring check",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read the ring check": {
+   "main": [
+    [
+     {
+      "node": "Engaged?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Engaged?": {
+   "main": [
+    [
+     {
+      "node": "Stop watching",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Stop watching": {
+   "main": [
+    [
+     {
+      "node": "Apify: 10 years of tagged photos",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Apify: 10 years of tagged photos": {
+   "main": [
+    [
+     {
+      "node": "Tidy the photos",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Tidy the photos": {
+   "main": [
+    [
+     {
+      "node": "Build the guest list",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Build the guest list": {
+   "main": [
+    [
+     {
+      "node": "Text me: the guest list",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Text me: the guest list": {
+   "main": [
+    [
+     {
+      "node": "Weather at the villa",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Weather at the villa": {
+   "main": [
+    [
+     {
+      "node": "Surf at the villa",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Surf at the villa": {
+   "main": [
+    [
+     {
+      "node": "Write the itinerary prompt",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write the itinerary prompt": {
+   "main": [
+    [
+     {
+      "node": "Claude: the itinerary",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Claude: the itinerary": {
+   "main": [
+    [
+     {
+      "node": "Write the itinerary",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write the itinerary": {
+   "main": [
+    [
+     {
+      "node": "Group: the itinerary",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Group: the itinerary": {
+   "main": [
+    [
+     {
+      "node": "Group: Lock in or miss out",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Golf, pubs + kebabs query": {
+   "main": [
+    [
+     {
+      "node": "Find them (OpenStreetMap)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Find them (OpenStreetMap)": {
+   "main": [
+    [
+     {
+      "node": "Plan the crawl",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Plan the crawl": {
+   "main": [
+    [
+     {
+      "node": "Weather today",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Weather today": {
+   "main": [
+    [
+     {
+      "node": "Surf today",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Surf today": {
+   "main": [
+    [
+     {
+      "node": "Day plan prompt",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Day plan prompt": {
+   "main": [
+    [
+     {
+      "node": "On the trip today?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "On the trip today?": {
+   "main": [
+    [
+     {
+      "node": "Claude: the day plan",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Claude: the day plan": {
+   "main": [
+    [
+     {
+      "node": "Today's plan",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Today's plan": {
+   "main": [
+    [
+     {
+      "node": "Group: today's plan",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Count the vote": {
+   "main": [
+    [
+     {
+      "node": "New lock in?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "New lock in?": {
+   "main": [
+    [
+     {
+      "node": "Flight search",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Flight search": {
+   "main": [
+    [
+     {
+      "node": "Duffel: cheapest flight",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Duffel: cheapest flight": {
+   "main": [
+    [
+     {
+      "node": "Write the lock in",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write the lock in": {
+   "main": [
+    [
+     {
+      "node": "Shirt order",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Shirt order": {
+   "main": [
+    [
+     {
+      "node": "Printful: draft shirt",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Printful: draft shirt": {
+   "main": [
+    [
+     {
+      "node": "Group: locked in",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Group: locked in": {
+   "main": [
+    [
+     {
+      "node": "Half the group in?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Half the group in?": {
+   "main": [
+    [
+     {
+      "node": "Brief: villa",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Brief: villa": {
+   "main": [
+    [
+     {
+      "node": "Agent: start (villa)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Agent: start (villa)": {
+   "main": [
+    [
+     {
+      "node": "Wait 30s (villa)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Wait 30s (villa)": {
+   "main": [
+    [
+     {
+      "node": "Agent: status (villa)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Agent: status (villa)": {
+   "main": [
+    [
+     {
+      "node": "Agent done? (villa)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Agent done? (villa)": {
+   "main": [
+    [
+     {
+      "node": "Villa result",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Wait 30s (villa)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Villa result": {
+   "main": [
+    [
+     {
+      "node": "Text me: the villa",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Closer to the villa?": {
+   "main": [
+    [
+     {
+      "node": "Order now?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Order now?": {
+   "main": [
+    [
+     {
+      "node": "Brief: kebabs",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Brief: kebabs": {
+   "main": [
+    [
+     {
+      "node": "Agent: start (kebabs)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Agent: start (kebabs)": {
+   "main": [
+    [
+     {
+      "node": "Wait 30s (kebabs)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Wait 30s (kebabs)": {
+   "main": [
+    [
+     {
+      "node": "Agent: status (kebabs)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Agent: status (kebabs)": {
+   "main": [
+    [
+     {
+      "node": "Agent done? (kebabs)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Agent done? (kebabs)": {
+   "main": [
+    [
+     {
+      "node": "Kebab result",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Wait 30s (kebabs)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Kebab result": {
+   "main": [
+    [
+     {
+      "node": "Group: kebabs",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Score under 50?": {
+   "main": [
+    [
+     {
+      "node": "Send it?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Send it?": {
+   "main": [
+    [
+     {
+      "node": "Brief: care package",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Brief: care package": {
+   "main": [
+    [
+     {
+      "node": "Agent: start (care)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Agent: start (care)": {
+   "main": [
+    [
+     {
+      "node": "Wait 30s (care)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Wait 30s (care)": {
+   "main": [
+    [
+     {
+      "node": "Agent: status (care)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Agent: status (care)": {
+   "main": [
+    [
+     {
+      "node": "Agent done? (care)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Agent done? (care)": {
+   "main": [
+    [
+     {
+      "node": "Care result",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Wait 30s (care)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Care result": {
+   "main": [
+    [
+     {
+      "node": "Text the groom: care package",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Is it Jess?": {
+   "main": [
+    [
+     {
+      "node": "From Jess?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "From Jess?": {
+   "main": [
+    [
+     {
+      "node": "Claude: reply to Jess",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Answer Twilio (not her)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Claude: reply to Jess": {
+   "main": [
+    [
+     {
+      "node": "Reply to Jess",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Reply to Jess": {
+   "main": [
+    [
+     {
+      "node": "Text the groom: Jess",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Text the groom: Jess": {
+   "main": [
+    [
+     {
+      "node": "Answer Twilio",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1"
+ }
+}

@@ -1,0 +1,1447 @@
+{
+ "name": "🎬 TREV - bucks party (demo: one click, everything to your phone)",
+ "nodes": [
+  {
+   "parameters": {},
+   "name": "Run (manual)",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [
+    40,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// ============ TREV SETTINGS (DEMO) ============  edit these, nothing else\n// One click runs the whole bucks. Everything comes to YOUR Telegram, and nothing is booked or bought.\nreturn [{ json: {\n  DEMO: true,\n  ME: 'You',\n  GROOM: { name: 'Matt', surname: 'Brennan', instagram: 'matt.brennan' },\n  FIANCEE: 'Jess',\n  TELEGRAM_CHAT_ID: 'YOUR_TELEGRAM_CHAT_ID',\n  TELEGRAM_BOT_TOKEN: 'YOUR_TELEGRAM_BOT_TOKEN',   // the Lock in / Miss out poll needs it\n  TIMEZONE: 'Australia/Brisbane',\n  TRIP: { where: 'Burleigh Heads', dates: '13-15 March', nights: 2 },\n  VILLA: { name: 'Villa 7, Burleigh Heads', lat: -28.0919, lng: 153.4527 },\n  GUEST_LIST_SIZE: 16,\n  SHIRT: 'matching pink shirt',\n  SLEEP_FLOOR: 50,                         // under this sleep score, the care package goes out\n  CARE_PACKAGE: ['Hash browns', 'Electrolytes', 'Panadol'],\n  POST_IMAGE: 'https://images.pexels.com/photos/14539552/pexels-photo-14539552.jpeg?auto=compress&cs=tinysrgb&w=900',\n  MODEL: 'claude-sonnet-5-5',\n} }];\n"
+   },
+   "name": "Trev settings",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    240,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nreturn [{ json: { caption: 'She said yes 💍 Can\\'t wait to marry my best friend', image: S.POST_IMAGE, at: 'just now' } }];\n"
+   },
+   "name": "Matt's new post (simulated)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    416,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Claude looks at the photo itself, so \"engaged\" never relies on a hashtag.\nconst S = $('Trev settings').first().json;\nconst p = $input.first().json;\nconst ask = `This is a new Instagram post from ${S.GROOM.name}. Caption: \"${p.caption}\".\nIs this an engagement announcement? Look for a ring on a hand, a proposal, or the caption saying so.\nReply with JSON only: {\"engaged\": true or false, \"ring\": true or false, \"why\": \"under 12 words\"}`;\nreturn [{ json: { body: { model: S.MODEL, max_tokens: 1500, messages: [{ role: 'user', content: [\n  { type: 'image', source: { type: 'url', url: p.image } },\n  { type: 'text', text: ask } ] }] } } }];\n"
+   },
+   "name": "Write the ring check",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    592,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.anthropic.com/v1/messages",
+    "options": {
+     "timeout": 90000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "anthropic-version",
+       "value": "2023-06-01"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.body) }}",
+    "authentication": "predefinedCredentialType",
+    "nodeCredentialType": "anthropicApi"
+   },
+   "name": "Claude: is that a ring?",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    768,
+    368
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "const textOf = (node) => {\n  const t = ($(node).first().json.content || []).map(c => c.text || '').join('').trim();\n  if (!t) throw new Error(node + ' returned no text. Raise max_tokens or check the model name.');\n  return t;\n};\nconst jsonOf = (node) => {\n  const t = textOf(node);\n  const m = t.match(/\\{[\\s\\S]*\\}/);\n  if (!m) throw new Error(node + ' did not return JSON: ' + t.slice(0, 120));\n  return JSON.parse(m[0]);\n};\n\nconst v = jsonOf('Claude: is that a ring?');\nreturn [{ json: { engaged: v.engaged === true, ring: v.ring === true, why: String(v.why || '') } }];\n"
+   },
+   "name": "Read the ring check",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    944,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.engaged }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Engaged?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    1120,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Simulated: ten years of photos the groom's been tagged in. The full build pulls the real ones.\nreturn [{ json: { photos: [{\"year\": 2016, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"jackohara\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"tomkells\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"sammo_\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"benny.d\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"lukeyp\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"lukeyp\", \"ryno\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"ryno\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"joshwhite\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"dancoop\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"olliegrant\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"chrisb\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"mickyt\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"harrisonlee\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"harrisonlee\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"harrisonlee\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"harrisonlee\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"harrisonlee\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"harrisonlee\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"harrisonlee\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"harrisonlee\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"harrisonlee\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"harrisonlee\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"harrisonlee\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"harrisonlee\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"willy.h\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"willy.h\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"willy.h\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"willy.h\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"willy.h\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"willy.h\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"willy.h\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"willy.h\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"willy.h\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"willy.h\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"willy.h\", \"jamesfitz\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"jamesfitz\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"jamesfitz\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"jamesfitz\"]}, {\"year\": 2016, \"tagged\": [\"matt.brennan\", \"jamesfitz\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"jamesfitz\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"jamesfitz\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"jamesfitz\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"jamesfitz\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"jamesfitz\", \"nickyr\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"nickyr\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"nickyr\"]}, {\"year\": 2025, \"tagged\": [\"matt.brennan\", \"nickyr\"]}, {\"year\": 2017, \"tagged\": [\"matt.brennan\", \"nickyr\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"nickyr\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"nickyr\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"nickyr\"]}, {\"year\": 2018, \"tagged\": [\"matt.brennan\", \"nickyr\"]}, {\"year\": 2020, \"tagged\": [\"matt.brennan\", \"pete.w\"]}, {\"year\": 2023, \"tagged\": [\"matt.brennan\", \"pete.w\"]}, {\"year\": 2026, \"tagged\": [\"matt.brennan\", \"pete.w\"]}, {\"year\": 2021, \"tagged\": [\"matt.brennan\", \"georgia.m\"]}, {\"year\": 2024, \"tagged\": [\"matt.brennan\", \"georgia.m\"]}, {\"year\": 2022, \"tagged\": [\"matt.brennan\", \"coach_dave\"]}, {\"year\": 2019, \"tagged\": [\"matt.brennan\", \"kyle.brennan\"]}] } }];\n"
+   },
+   "name": "10 years of tagged photos (simulated)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1296,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nconst photos = $input.first().json.photos;\nconst counts = {};\nfor (const ph of photos) for (const t of ph.tagged) if (t !== S.GROOM.instagram) counts[t] = (counts[t] || 0) + 1;\nconst people = Object.entries(counts).map(([handle, n]) => {\n  const p = ({\"jackohara\": {\"name\": \"Jack O'Hara\"}, \"tomkells\": {\"name\": \"Tom Kelleher\"}, \"sammo_\": {\"name\": \"Sam Mitchell\"}, \"benny.d\": {\"name\": \"Ben Davies\"}, \"lukeyp\": {\"name\": \"Luke Pearson\"}, \"ryno\": {\"name\": \"Ryan Novak\"}, \"joshwhite\": {\"name\": \"Josh White\"}, \"dancoop\": {\"name\": \"Dan Cooper\"}, \"olliegrant\": {\"name\": \"Ollie Grant\"}, \"chrisb\": {\"name\": \"Chris Baxter\"}, \"mickyt\": {\"name\": \"Mick Turner\"}, \"harrisonlee\": {\"name\": \"Harry Lee\"}, \"willy.h\": {\"name\": \"Will Hughes\"}, \"jamesfitz\": {\"name\": \"James Fitzgerald\"}, \"nickyr\": {\"name\": \"Nick Russo\"}, \"pete.w\": {\"name\": \"Pete Walsh\"}, \"georgia.m\": {\"name\": \"Georgia Moss\"}, \"coach_dave\": {\"name\": \"Dave Collins\"}, \"kyle.brennan\": {\"name\": \"Kyle Brennan\"}})[handle] || { name: handle };\n  return { handle, name: p.name, n, family: (p.name || '').endsWith(' ' + S.GROOM.surname),\n           first: Math.min(...photos.filter(ph => ph.tagged.includes(handle)).map(ph => ph.year)) };\n});\nconst family = people.filter(p => p.family);\nconst mates = people.filter(p => !p.family).sort((a, b) => b.n - a.n)\n  .slice(0, Math.max(0, S.GUEST_LIST_SIZE - 1 - family.length));\nconst list = [...mates, ...family];\nconst wildcard = family.sort((a, b) => a.n - b.n)[0] || null;   // the one nobody's met\nreturn [{ json: { photosScanned: photos.length, years: `${Math.min(...photos.map(p => p.year))}-${Math.max(...photos.map(p => p.year))}`,\n  guests: list, size: list.length + 1, wildcard } }];\n"
+   },
+   "name": "Build the guest list",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1472,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nconst g = $input.first().json;\nconst names = g.guests.filter(p => !g.wildcard || p.handle !== g.wildcard.handle).map(p => p.name.split(' ')[0]);\nlet msg = `💍 <b>${S.GROOM.name} just got engaged.</b>\\n\\n🔎 Scanned ${g.photosScanned} tagged photos (${g.years}).\\n`\n  + `🧾 Guest list: <b>${g.size} blokes</b>\\n${S.GROOM.name}, ${names.join(', ')}`;\nif (g.wildcard) msg += `\\n\\n+ <b>${g.wildcard.name}</b>. Cousin. Tagged once, ${g.wildcard.first}. Nobody's ever met him.`;\nreturn [{ json: { msg } }];\n"
+   },
+   "name": "Write the guest list",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1648,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_CHAT_ID }}",
+    "text": "={{ $('Write the guest list').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text: the guest list",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    1824,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://api.open-meteo.com/v1/forecast?latitude={{ $('Trev settings').first().json.VILLA.lat }}&longitude={{ $('Trev settings').first().json.VILLA.lng }}&daily=temperature_2m_max,precipitation_probability_max,wind_speed_10m_max&timezone={{ encodeURIComponent($('Trev settings').first().json.TIMEZONE) }}&forecast_days=3",
+    "options": {
+     "timeout": 30000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "User-Agent",
+       "value": "trev-bucks-party-n8n/1.0"
+      }
+     ]
+    }
+   },
+   "name": "Weather at the villa",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    2000,
+    368
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://marine-api.open-meteo.com/v1/marine?latitude={{ $('Trev settings').first().json.VILLA.lat }}&longitude={{ $('Trev settings').first().json.VILLA.lng }}&daily=wave_height_max&timezone={{ encodeURIComponent($('Trev settings').first().json.TIMEZONE) }}&forecast_days=3",
+    "options": {
+     "timeout": 30000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "User-Agent",
+       "value": "trev-bucks-party-n8n/1.0"
+      }
+     ]
+    }
+   },
+   "name": "Surf at the villa",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    2176,
+    368
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "// Real forecast for the villa (Open-Meteo, free, no key), so the plan fits the surf and the weather.\nconst S = $('Trev settings').first().json;\nconst w = $('Weather at the villa').first().json.daily || {};\nconst m = ($('Surf at the villa').first().json.daily) || {};\nconst days = (w.time || []).slice(0, 3).map((d, i) => ({ day: i + 1,\n  maxC: Math.round((w.temperature_2m_max || [])[i]), rainPct: (w.precipitation_probability_max || [])[i],\n  windKmh: Math.round((w.wind_speed_10m_max || [])[i]), waveM: (m.wave_height_max || [])[i] }));\nconst ask = `You're Trev, the AI planning ${S.GROOM.name}'s bucks: ${S.GUEST_LIST_SIZE} blokes, ${S.TRIP.where}, ${S.TRIP.dates}, staying at ${S.VILLA.name}.\nThe forecast for the three days: ${JSON.stringify(days)}.\nWrite the itinerary as exactly 3 lines, one per day, like \"Day 1 · Surf 🏄 3ft and clean, then beers 🍻\".\nIt MUST have a surf session, 18 holes of golf, and beers every day. Rain doesn't cancel anything, these blokes play in the wet.\nPut the surf on the day with the biggest waves. Mention the real wave size once. Under 12 words a line. No other text.`;\nreturn [{ json: { days, body: { model: S.MODEL, max_tokens: 1500, messages: [{ role: 'user', content: ask }] } } }];\n"
+   },
+   "name": "Write the itinerary prompt",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2352,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.anthropic.com/v1/messages",
+    "options": {
+     "timeout": 90000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "anthropic-version",
+       "value": "2023-06-01"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.body) }}",
+    "authentication": "predefinedCredentialType",
+    "nodeCredentialType": "anthropicApi"
+   },
+   "name": "Claude: the itinerary",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    2528,
+    368
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "const textOf = (node) => {\n  const t = ($(node).first().json.content || []).map(c => c.text || '').join('').trim();\n  if (!t) throw new Error(node + ' returned no text. Raise max_tokens or check the model name.');\n  return t;\n};\nconst jsonOf = (node) => {\n  const t = textOf(node);\n  const m = t.match(/\\{[\\s\\S]*\\}/);\n  if (!m) throw new Error(node + ' did not return JSON: ' + t.slice(0, 120));\n  return JSON.parse(m[0]);\n};\n\nconst S = $('Trev settings').first().json;\nconst plan = textOf('Claude: the itinerary');\nreturn [{ json: { plan, msg: `🗓️ <b>${S.GROOM.name}'s bucks · ${S.TRIP.where} · ${S.TRIP.dates}</b>\\n\\n${plan}\\n\\nOne vote each. Lock in or miss out.` } }];\n"
+   },
+   "name": "Write the itinerary",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2704,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_CHAT_ID }}",
+    "text": "={{ $('Write the itinerary').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text: the itinerary",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    2880,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "=https://api.telegram.org/bot{{ $('Trev settings').first().json.TELEGRAM_BOT_TOKEN }}/sendPoll",
+    "options": {
+     "timeout": 30000
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({ chat_id: $('Trev settings').first().json.TELEGRAM_CHAT_ID, question: $('Trev settings').first().json.GROOM.name + \"'s bucks · \" + $('Trev settings').first().json.TRIP.where + ' · ' + $('Trev settings').first().json.TRIP.dates + '. You in?', options: ['🔒 Lock me in', 'Miss out 🥲'], is_anonymous: false }) }}"
+   },
+   "name": "Send the poll",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    3056,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://api.telegram.org/bot{{ $('Trev settings').first().json.TELEGRAM_BOT_TOKEN }}/getUpdates?timeout=0&limit=100&allowed_updates=%5B%22poll_answer%22%5D",
+    "options": {
+     "timeout": 30000
+    }
+   },
+   "name": "Any answer yet?",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    3232,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Has the poll been tapped? Matched on THIS poll's id, because Telegram keeps old answers around.\nconst pollId = String($('Send the poll').first().json.result.poll.id);\nlet a = null;\nfor (const u of $input.first().json.result || []) {\n  const p = u.poll_answer;\n  if (p && String(p.poll_id) === pollId && (p.option_ids || []).length) a = p;   // last tap wins\n}\nconst giveUp = !a && ($runIndex || 0) >= 120;   // no tap in time counts as \"miss out\"\nreturn [{ json: { answered: !!a || giveUp, data: { approved: !!a && a.option_ids[0] === 0 } } }];\n"
+   },
+   "name": "Read the vote",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    3408,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.answered }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Tapped?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    3584,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.data.approved }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Locked in?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    3760,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Simulated: the other blokes' votes. Yours is the real tap. Kyle locks in first, obviously.\nconst S = $('Trev settings').first().json;\nconst g = $('Build the guest list').first().json;\nconst order = g.wildcard ? [g.wildcard, ...g.guests.filter(p => p.handle !== g.wildcard.handle)] : g.guests;\nconst yes = [{ name: S.ME }, ...order.slice(0, S.GUEST_LIST_SIZE - 1)];\nreturn [{ json: { yes: yes.map(p => p.name), first: order[0].name, count: yes.length } }];\n"
+   },
+   "name": "Everyone else votes (simulated)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    3936,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Simulated: every yes books a flight, a bed and a shirt. The demo books nothing.\nconst S = $('Trev settings').first().json;\nconst v = $input.first().json;\nconst msg = `✅ <b>${v.count} locked in.</b> ${v.first.split(' ')[0]} was first.\\n\\n`\n  + `✈️ ${v.count} flights booked\\n🏡 ${S.VILLA.name} · ${S.TRIP.nights} nights\\n👕 ${v.count} × ${S.SHIRT} (nobody agreed to this)`;\nreturn [{ json: { msg } }];\n"
+   },
+   "name": "Book it (simulated)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    4112,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_CHAT_ID }}",
+    "text": "={{ $('Book it (simulated)').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text: locked in",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    4288,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// One Overpass query (OpenStreetMap, free, no key): pubs and bars near the villa, plus golf courses.\nconst S = $('Trev settings').first().json;\nconst v = S.VILLA;\nconst q = `[out:json][timeout:25];(node[\"amenity\"~\"^(pub|bar|biergarten)$\"](around:2500,${v.lat},${v.lng});`\n  + `way[\"leisure\"=\"golf_course\"](around:15000,${v.lat},${v.lng});node[\"cuisine\"~\"kebab\"](around:4000,${v.lat},${v.lng}););out center 80;`;\nreturn [{ json: { q } }];\n"
+   },
+   "name": "Golf, pubs + kebabs query",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    4464,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://overpass-api.de/api/interpreter?data={{ encodeURIComponent($json.q) }}",
+    "options": {
+     "timeout": 60000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "User-Agent",
+       "value": "trev-bucks-party-n8n/1.0"
+      }
+     ]
+    }
+   },
+   "name": "Find them (OpenStreetMap)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    4640,
+    368
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "const km = (a, b, c, d) => { const R = 6371, r = Math.PI / 180;\n  const x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2;\n  return 2 * R * Math.asin(Math.sqrt(x)); };\n\n// Tee off at the closest course, then a pub crawl that never walks back on itself.\nconst S = $('Trev settings').first().json;\nconst v = S.VILLA;\nconst els = ($input.first().json.elements || []).map(e => ({ name: (e.tags || {}).name, tags: e.tags || {},\n  lat: e.lat || (e.center || {}).lat, lng: e.lon || (e.center || {}).lon })).filter(e => e.name && e.lat);\nconst golf = els.filter(e => e.tags.leisure === 'golf_course').map(e => ({ ...e, km: km(v.lat, v.lng, e.lat, e.lng) }))\n  .sort((a, b) => a.km - b.km)[0];\nlet pubs = els.filter(e => /pub|bar|biergarten/.test(e.tags.amenity || ''));\nconst route = [];\nlet here = { lat: v.lat, lng: v.lng }, walk = 0;\nwhile (route.length < 4 && pubs.length) {\n  pubs.sort((a, b) => km(here.lat, here.lng, a.lat, a.lng) - km(here.lat, here.lng, b.lat, b.lng));\n  const next = pubs.shift();\n  walk += km(here.lat, here.lng, next.lat, next.lng);\n  route.push(next.name); here = next;\n}\nconst kebab = els.filter(e => /kebab/i.test(e.tags.cuisine || '')).map(e => ({ name: e.name, lat: e.lat, lng: e.lng,\n  km: km(v.lat, v.lng, e.lat, e.lng) })).sort((a, b) => a.km - b.km)[0] || null;\nconst msg = `🛬 <b>Wheels down. Trev's itinerary is live.</b>\\n\\n`\n  + `⛳ 7:40am · 18 holes at ${golf ? golf.name : 'the closest course'}${golf ? ` (${golf.km.toFixed(1)} km)` : ''}\\n`\n  + `🍻 Then the crawl: ${route.join(' → ') || 'the closest pub'}\\n`\n  + `🚶 ${walk.toFixed(1)} km all up. Golf beers stay cold.`;\nreturn [{ json: { golf, route, walk, kebab, msg } }];\n"
+   },
+   "name": "Plan the day",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    4816,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_CHAT_ID }}",
+    "text": "={{ $('Plan the day').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text: wheels down",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    4992,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Simulated: the fiancee's text lands at 11:48pm. Trev answers it, not the groom.\nconst S = $('Trev settings').first().json;\nreturn [{ json: { from: S.FIANCEE, at: '11:48pm', text: 'Is he behaving?? 👀 Haven\\'t heard from him since lunch' } }];\n"
+   },
+   "name": "Jess texts (simulated)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    5168,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nconst t = $input.first().json;\nconst ask = `You're Trev, an AI looking after ${S.GROOM.name} on his bucks. His fiancee ${S.FIANCEE} just texted: \"${t.text}\".\nReply as ${S.GROOM.name}'s minder: calm and completely reassuring, in exactly this shape:\n\"He's safe. [a small number] beers. In bed by [an early time].\" For example: \"He's safe. Two beers. In bed by ten.\"\nNumbers as words. No emojis. No em dashes. Output only the message.`;\nreturn [{ json: { body: { model: S.MODEL, max_tokens: 1500, messages: [{ role: 'user', content: ask }] } } }];\n"
+   },
+   "name": "Write the reply prompt",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    5344,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "https://api.anthropic.com/v1/messages",
+    "options": {
+     "timeout": 90000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "anthropic-version",
+       "value": "2023-06-01"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.body) }}",
+    "authentication": "predefinedCredentialType",
+    "nodeCredentialType": "anthropicApi"
+   },
+   "name": "Claude: reply to Jess",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    5520,
+    368
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "const textOf = (node) => {\n  const t = ($(node).first().json.content || []).map(c => c.text || '').join('').trim();\n  if (!t) throw new Error(node + ' returned no text. Raise max_tokens or check the model name.');\n  return t;\n};\nconst jsonOf = (node) => {\n  const t = textOf(node);\n  const m = t.match(/\\{[\\s\\S]*\\}/);\n  if (!m) throw new Error(node + ' did not return JSON: ' + t.slice(0, 120));\n  return JSON.parse(m[0]);\n};\n\nconst S = $('Trev settings').first().json;\nconst t = $('Jess texts (simulated)').first().json;\nconst reply = textOf('Claude: reply to Jess');\nreturn [{ json: { reply, msg: `📩 <b>${S.FIANCEE} → ${S.GROOM.name}</b> · ${t.at}\\n“${t.text}”\\n\\n📲 <b>Trev → ${S.FIANCEE}</b>\\n${reply}` } }];\n"
+   },
+   "name": "Trev replies",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    5696,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_CHAT_ID }}",
+    "text": "={{ $('Trev replies').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text: Trev to Jess",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    5872,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Simulated: two Find My pings, 3 minutes apart, for all the boys. Leaving the last pub, walking home.\nconst S = $('Trev settings').first().json;\nconst v = S.VILLA;\nconst ping = (dLat, dLng, at) => ({ at, people: Array.from({ length: S.GUEST_LIST_SIZE }, (_, i) =>\n  ({ lat: v.lat + dLat + (i % 4) * 0.00006, lng: v.lng + dLng + Math.floor(i / 4) * 0.00006 })) });\nreturn [{ json: { pings: [ping(0.0168, -0.0041, '1:38am'), ping(0.0121, -0.0029, '1:41am')] } }];\n"
+   },
+   "name": "Find My pings (simulated)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    6048,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const km = (a, b, c, d) => { const R = 6371, r = Math.PI / 180;\n  const x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2;\n  return 2 * R * Math.asin(Math.sqrt(x)); };\n\n// Heading home = the whole group is moving, and every ping is closer to the villa than the last.\nconst S = $('Trev settings').first().json;\nconst v = S.VILLA;\nconst [a, b] = $input.first().json.pings;\nconst avg = p => p.people.reduce((s, x) => s + km(x.lat, x.lng, v.lat, v.lng), 0) / p.people.length;\nconst before = avg(a), now = avg(b);\nconst c = b.people.reduce((s, x) => ({ lat: s.lat + x.lat / b.people.length, lng: s.lng + x.lng / b.people.length }), { lat: 0, lng: 0 });\nreturn [{ json: { headingHome: now < before - 0.1, kmToVilla: +now.toFixed(2), at: b.at, from: c,\n  kebab: $('Plan the day').first().json.kebab } }];\n"
+   },
+   "name": "Heading home?",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    6224,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.headingHome }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Walking home?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    6400,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "=https://routing.openstreetmap.de/routed-foot/route/v1/driving/{{ $json.from.lng }},{{ $json.from.lat }};{{ $('Trev settings').first().json.VILLA.lng }},{{ $('Trev settings').first().json.VILLA.lat }}?overview=false",
+    "options": {
+     "timeout": 30000
+    },
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "User-Agent",
+       "value": "trev-bucks-party-n8n/1.0"
+      }
+     ]
+    }
+   },
+   "name": "Walking time to the villa (OSRM)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    6576,
+    368
+   ],
+   "retryOnFail": true,
+   "maxTries": 3,
+   "waitBetweenTries": 2000
+  },
+  {
+   "parameters": {
+    "jsCode": "// Simulated order. The shop is real (OpenStreetMap) and the ETA is a real walking route (OSRM).\nconst S = $('Trev settings').first().json;\nconst h = $('Heading home?').first().json;\nconst r = (($input.first().json.routes || [])[0]) || {};\nconst mins = Math.max(4, Math.round((r.duration || 1500) / 60));\nconst shop = h.kebab ? h.kebab.name : 'the closest kebab shop';\nconst msg = `📍 <b>The boys are heading home.</b> ${h.kmToVilla} km out, ${h.at}.\\n\\n`\n  + `🥙 ${S.GUEST_LIST_SIZE} kebabs ordered from ${shop}\\n⏱️ Timed to land at ${S.VILLA.name.split(',')[0]} when you do (${mins} min)`;\nreturn [{ json: { mins, msg } }];\n"
+   },
+   "name": "Order the kebabs (simulated)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    6752,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_CHAT_ID }}",
+    "text": "={{ $('Order the kebabs (simulated)').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text: kebabs",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    6928,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Simulated: the groom's watch, 7:02am.\nreturn [{ json: { score: 42, hours: 3.9, at: '7:02am' } }];\n"
+   },
+   "name": "Matt's sleep score (simulated)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    7104,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.score < $('Trev settings').first().json.SLEEP_FLOOR }}",
+       "rightValue": "",
+       "operator": {
+        "type": "boolean",
+        "operation": "true",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "looseTypeValidation": true,
+    "options": {}
+   },
+   "name": "Under 50?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2,
+   "position": [
+    7280,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Simulated order. The full build sends a browser agent to the groom's own Uber Eats.\nconst S = $('Trev settings').first().json;\nconst s = $('Matt\\'s sleep score (simulated)').first().json;\nconst msg = `⌚ <b>${S.GROOM.name}'s sleep score: ${s.score}</b> (${s.hours} hrs). Under ${S.SLEEP_FLOOR}.\\n\\n`\n  + `🛵 Care package on the way:\\n${S.CARE_PACKAGE.map(x => '• ' + x).join('\\n')}\\n\\nAt the door before he's found his phone.`;\nreturn [{ json: { msg } }];\n"
+   },
+   "name": "Care package (simulated)",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    7456,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_CHAT_ID }}",
+    "text": "={{ $('Care package (simulated)').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text: care package",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    7632,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const S = $('Trev settings').first().json;\nreturn [{ json: { msg: `📩 <b>${S.FIANCEE} → Trev</b>\\n“I know what you did. Can you plan the hens?”\\n\\n🗓️ <b>New mission accepted.</b>` } }];\n"
+   },
+   "name": "Jess wants the hens",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    7808,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_CHAT_ID }}",
+    "text": "={{ $('Jess wants the hens').first().json.msg }}",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text: new mission",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    7984,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "resume": "timeInterval",
+    "amount": 5,
+    "unit": "seconds"
+   },
+   "name": "Hold, then check again",
+   "type": "n8n-nodes-base.wait",
+   "typeVersion": 1.1,
+   "position": [
+    3584,
+    600
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_CHAT_ID }}",
+    "text": "=👀 New post from {{ $('Trev settings').first().json.GROOM.name }}. No ring. Trev goes back to watching.",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text: not a ring",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    1120,
+    600
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "={{ $('Trev settings').first().json.TELEGRAM_CHAT_ID }}",
+    "text": "=🥲 You're out. Trev's told the group.",
+    "additionalFields": {
+     "parse_mode": "HTML",
+     "appendAttribution": false,
+     "disable_web_page_preview": true
+    }
+   },
+   "name": "Text: missed out",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    3760,
+    600
+   ]
+  }
+ ],
+ "connections": {
+  "Run (manual)": {
+   "main": [
+    [
+     {
+      "node": "Trev settings",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Trev settings": {
+   "main": [
+    [
+     {
+      "node": "Matt's new post (simulated)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Matt's new post (simulated)": {
+   "main": [
+    [
+     {
+      "node": "Write the ring check",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write the ring check": {
+   "main": [
+    [
+     {
+      "node": "Claude: is that a ring?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Claude: is that a ring?": {
+   "main": [
+    [
+     {
+      "node": "Read the ring check",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read the ring check": {
+   "main": [
+    [
+     {
+      "node": "Engaged?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Engaged?": {
+   "main": [
+    [
+     {
+      "node": "10 years of tagged photos (simulated)",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Text: not a ring",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "10 years of tagged photos (simulated)": {
+   "main": [
+    [
+     {
+      "node": "Build the guest list",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Build the guest list": {
+   "main": [
+    [
+     {
+      "node": "Write the guest list",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write the guest list": {
+   "main": [
+    [
+     {
+      "node": "Text: the guest list",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Text: the guest list": {
+   "main": [
+    [
+     {
+      "node": "Weather at the villa",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Weather at the villa": {
+   "main": [
+    [
+     {
+      "node": "Surf at the villa",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Surf at the villa": {
+   "main": [
+    [
+     {
+      "node": "Write the itinerary prompt",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write the itinerary prompt": {
+   "main": [
+    [
+     {
+      "node": "Claude: the itinerary",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Claude: the itinerary": {
+   "main": [
+    [
+     {
+      "node": "Write the itinerary",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write the itinerary": {
+   "main": [
+    [
+     {
+      "node": "Text: the itinerary",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Text: the itinerary": {
+   "main": [
+    [
+     {
+      "node": "Send the poll",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Send the poll": {
+   "main": [
+    [
+     {
+      "node": "Any answer yet?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Any answer yet?": {
+   "main": [
+    [
+     {
+      "node": "Read the vote",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read the vote": {
+   "main": [
+    [
+     {
+      "node": "Tapped?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Tapped?": {
+   "main": [
+    [
+     {
+      "node": "Locked in?",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Hold, then check again",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Locked in?": {
+   "main": [
+    [
+     {
+      "node": "Everyone else votes (simulated)",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Text: missed out",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Everyone else votes (simulated)": {
+   "main": [
+    [
+     {
+      "node": "Book it (simulated)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Book it (simulated)": {
+   "main": [
+    [
+     {
+      "node": "Text: locked in",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Text: locked in": {
+   "main": [
+    [
+     {
+      "node": "Golf, pubs + kebabs query",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Golf, pubs + kebabs query": {
+   "main": [
+    [
+     {
+      "node": "Find them (OpenStreetMap)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Find them (OpenStreetMap)": {
+   "main": [
+    [
+     {
+      "node": "Plan the day",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Plan the day": {
+   "main": [
+    [
+     {
+      "node": "Text: wheels down",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Text: wheels down": {
+   "main": [
+    [
+     {
+      "node": "Jess texts (simulated)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Jess texts (simulated)": {
+   "main": [
+    [
+     {
+      "node": "Write the reply prompt",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write the reply prompt": {
+   "main": [
+    [
+     {
+      "node": "Claude: reply to Jess",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Claude: reply to Jess": {
+   "main": [
+    [
+     {
+      "node": "Trev replies",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Trev replies": {
+   "main": [
+    [
+     {
+      "node": "Text: Trev to Jess",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Text: Trev to Jess": {
+   "main": [
+    [
+     {
+      "node": "Find My pings (simulated)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Find My pings (simulated)": {
+   "main": [
+    [
+     {
+      "node": "Heading home?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Heading home?": {
+   "main": [
+    [
+     {
+      "node": "Walking home?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Walking home?": {
+   "main": [
+    [
+     {
+      "node": "Walking time to the villa (OSRM)",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Matt's sleep score (simulated)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Walking time to the villa (OSRM)": {
+   "main": [
+    [
+     {
+      "node": "Order the kebabs (simulated)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Order the kebabs (simulated)": {
+   "main": [
+    [
+     {
+      "node": "Text: kebabs",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Text: kebabs": {
+   "main": [
+    [
+     {
+      "node": "Matt's sleep score (simulated)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Matt's sleep score (simulated)": {
+   "main": [
+    [
+     {
+      "node": "Under 50?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Under 50?": {
+   "main": [
+    [
+     {
+      "node": "Care package (simulated)",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Jess wants the hens",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Care package (simulated)": {
+   "main": [
+    [
+     {
+      "node": "Text: care package",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Text: care package": {
+   "main": [
+    [
+     {
+      "node": "Jess wants the hens",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Jess wants the hens": {
+   "main": [
+    [
+     {
+      "node": "Text: new mission",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Hold, then check again": {
+   "main": [
+    [
+     {
+      "node": "Any answer yet?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1"
+ }
+}
